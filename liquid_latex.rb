@@ -94,9 +94,18 @@ module Jekyll
 
           # Put the LaTeX source code to file
           latex_tex = "\\documentclass[letterpaper,dvips]{article}\n"
-          @p["usepackages"].gsub(" ","").split(",").each do |packagename|
-            latex_tex << "\\usepackage\{#{packagename}\}\n"
-          end
+          regex = %r{([^,\[]+(?:\[[^\]]*\])?)}
+          #match groups of the form "(group1),(group2[opt1,opt2,opt3]),(group3)"
+          @p["usepackages"].scan(regex) { |tmp|
+            extracted =  tmp[0].to_s
+            if extracted.include? "["
+              packagename, *rest = extracted.split("\[")
+              packageopts, _ = rest[0].split("\]")
+              latex_tex << "\\usepackage\[#{packageopts}\]\{#{packagename}\}\n"
+            else
+              latex_tex << "\\usepackage\{#{extracted}\}\n"
+            end
+          }
           latex_tex << "\\begin{document}\n\\pagestyle{empty}\n"
           latex_tex << latex_source
           latex_tex << "\\end{document}"
