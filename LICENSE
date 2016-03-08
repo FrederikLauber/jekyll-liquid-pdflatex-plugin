@@ -1,3 +1,21 @@
+GPL3+ License
+
+Copyright (C) 2016  Frederik Lauber (flambda.de/impressum)
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+
 The MIT License (MIT)
 
 Copyright (c) 2013 Fèlix Galindo Allué
@@ -18,3 +36,8 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+This is a fork of https://github.com/fgalindo/jekyll-liquid-latex-plugin which is licensed under the MIT.
+Hence parts of this program are also licensed under the MIT license (all code which was written by Fèlix Galindo Allué)
+while all code written by Frederik Lauber is GPL3+.
+
