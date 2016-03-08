@@ -126,3 +126,5 @@ Notes
     Aside, you can delete all the contents of your LaTeX generated blocks in the source directory if you want to make a backup copy of your site. It will be completelly regenerated when you rebuild your site.
 
 *   Also, this plugin keeps the folder of generated images in a clean state. That is, there will be only those images that are used in your site. All previously generated images will be deleted if they are detected as orphaned from the posts.
+
+*   The PNG file will be visible on your page. Clicking on it will get the the PDF.
