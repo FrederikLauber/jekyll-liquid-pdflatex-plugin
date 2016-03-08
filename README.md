@@ -86,18 +86,6 @@ Sample usage
 
 You can type the following block of LaTeX inside one of your posts:
 
-{% latex  density=300 resize=300x300 usepackages=tikz,circuitikz[european resistors,american inductors,american voltages],fontenc[T1],inputenc[utf8],amsmath%}
-\begin{circuitikz}
-\draw (1,2) to [C, l_=$C$, -*] (3,2);
-\draw (3,2) to[R=$R$] (3,0);
-\draw (0,0) to[short, o-*] (3,0) to[short, -o] (4,0);
-\draw (0,0) to [open, v^>=$U_1$] (0,2);
-\draw (0,2) to [short, o- ,i=$I_1$] (1,2);
-\draw (4,0) to [open, v>=$U_2$] (4,2);
-\draw (3,2) to [short, -o ,i=$I_2$] (4,2);
-\end{circuitikz}
-{% endlatex %}
-
     {% latex  density=300 resize=300x300 usepackages=tikz,circuitikz[european resistors,american inductors,american voltages],fontenc[T1],inputenc[utf8],amsmath %}
     \begin{circuitikz}
     \draw (1,2) to [C, l_=$C$, -*] (3,2);
