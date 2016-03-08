@@ -11,10 +11,10 @@ module Jekyll
         "density" => "300",
         "resize" => nil,
         "usepackages" => "",
-        "latex_cmd" => "/usr/bin/pdflatex -interaction=nonstopmode -output-directory $output-directory $texfile > /dev/null 2>&1",
-        "pdf_crop" => "pdfcrop $pdffile $pdffile > /dev/null 2>&1",
-        "convert_cmd" => "convert -density $density $resize_opt $pdffile $pngfile  > /dev/null 2>&1",
-        "output_directory" => "/latex",
+        "latex_cmd" => "pdflatex -interaction=nonstopmode -output-directory $output-directory $texfile > /dev/null 2>&1",
+        "pdfcrop_cmd" => "pdfcrop $pdffile $pdffile > /dev/null 2>&1",
+        "convert_cmd" => "convert -fuzz 10% -transparent white -density $density $resize_opt $pdffile $pngfile  > /dev/null 2>&1",
+        "output_directory" => "/_latex",
         "src_dir" => "",
         "dst_dir" => ""
       }
@@ -125,7 +125,7 @@ module Jekyll
 
           # Compile the document to PNG
           ok = execute_cmd(@@globals["latex_cmd"])
-          execute_cmd(@@globals["pdf_crop"]) if ok
+          execute_cmd(@@globals["pdfcrop_cmd"]) if ok
 	  execute_cmd(@@globals["convert_cmd"]) if ok
           # Delete temporary files
           Dir.glob(File.join(@@globals["src_dir"], pre_filename + ".*")).each do |f|
