@@ -9,11 +9,11 @@ module Jekyll
       @@globals = {
         "debug" => false,
         "density" => "300",
+        "resize" => nil,
         "usepackages" => "",
-        "latex_cmd" => "latex -interaction=nonstopmode $texfile > /dev/null 2>&1",
-        "dvips_cmd" => "dvips -E $dvifile -o $epsfile > /dev/null 2>&1",
-        "convert_cmd" => "convert -density $density $epsfile $pngfile > /dev/null 2>&1",
-        "temp_filename" => "latex_temp",
+        "latex_cmd" => "/usr/bin/pdflatex -interaction=nonstopmode -output-directory $output-directory $texfile > /dev/null 2>&1",
+        "pdf_crop" => "pdfcrop $pdffile $pdffile > /dev/null 2>&1",
+        "convert_cmd" => "convert -density $density $resize_opt $pdffile $pngfile  > /dev/null 2>&1",
         "output_directory" => "/latex",
         "src_dir" => "",
         "dst_dir" => ""
@@ -42,7 +42,7 @@ module Jekyll
       end
 
       def self.read_config(name, site)
-        cfg = site.config["liquid_latex"]
+        cfg = site.config["liquid_pdflatex"]
         return if cfg.nil?
         value = cfg[name]
         @@globals[name] = value if !value.nil?
@@ -65,9 +65,16 @@ module Jekyll
       def execute_cmd(cmd)
         cmd = cmd.gsub("\$density", @p["density"].to_s)
         cmd = cmd.gsub("\$texfile", @p["tex_fn"])
-        cmd = cmd.gsub("\$dvifile", @p["dvi_fn"])
-        cmd = cmd.gsub("\$epsfile", @p["eps_fn"])
+        cmd = cmd.gsub("\$pdffile", @p["pdf_fn"])
         cmd = cmd.gsub("\$pngfile", @p["png_fn"])
+        cmd = cmd.gsub("\$output-directory", @@globals["src_dir"])
+        tmp = 
+          if @p["resize"].nil? then 
+            ""
+          else 
+            "-resize #{@p["resize"]}"
+          end
+        cmd = cmd.gsub("\$resize_opt", tmp)
         puts cmd if @@globals["debug"]
         system(cmd)
         return ($?.exitstatus == 0)
@@ -78,22 +85,25 @@ module Jekyll
         # fix initial configurations
         site = context.registers[:site]
         Tags::LatexBlock::init_globals(site)
-        # prepare density and usepackages
+        # prepare density,resize and usepackages
         @p["density"] = @@globals["density"] unless @p.key?("density")
+        @p["resize"]  = @@globals["resize"] unless @p.key?("resize") 
         @p["usepackages"] = (@@globals["usepackages"].split(",") + @p["usepackages"].split(",")).join(",")
         # if this LaTeX code is already compiled, skip its compilation
-        hash_txt = @p["density"].to_s + @p["usepackages"].to_s + latex_source
-        filename = "latex-" + Digest::MD5.hexdigest(hash_txt) + ".png"
-        @p["png_fn"] = File.join(@@globals["src_dir"], filename)
+        hash_txt = @p["density"].to_s + @p["usepackages"].to_s + @p["resize"].to_s + latex_source
+        pre_filename = "latex-" + Digest::MD5.hexdigest(hash_txt)
+        filename_pdf = pre_filename + ".pdf"
+        filename_png = pre_filename + ".png"
+        @p["pdf_fn"] = File.join(@@globals["src_dir"], filename_pdf)
+        @p["png_fn"] = File.join(@@globals["src_dir"], filename_png)
         ok = true
-        if !File.exists?(@p["png_fn"])
-          puts "Compiling with LaTeX..." if @@globals["debug"]
-          @p["tex_fn"] = @@globals["temp_filename"] + ".tex"
-          @p["dvi_fn"] = @@globals["temp_filename"] + ".dvi"
-          @p["eps_fn"] = @@globals["temp_filename"] + ".eps"
+        if !File.exists?(@p["pdf_fn"]) or !File.exists?(@p["png_fn"])
+          filename_tex = pre_filename + ".tex"
+          @p["tex_fn"] = File.join(@@globals["src_dir"], filename_tex)
 
+          puts "Compiling with LaTeX..." if @@globals["debug"]
           # Put the LaTeX source code to file
-          latex_tex = "\\documentclass[letterpaper,dvips]{article}\n"
+          latex_tex = "\\documentclass[letterpaper]{article}\n"
           regex = %r{([^,\[]+(?:\[[^\]]*\])?)}
           #match groups of the form "(group1),(group2[opt1,opt2,opt3]),(group3)"
           @p["usepackages"].scan(regex) { |tmp|
@@ -101,7 +111,7 @@ module Jekyll
             if extracted.include? "["
               packagename, *rest = extracted.split("\[")
               packageopts, _ = rest[0].split("\]")
-              latex_tex << "\\usepackage\[#{packageopts}\]\{#{packagename}\}\n"
+              latex_tex << "\\usepackage\[#{packageopts}\]\{#{packagename}\}\n"  
             else
               latex_tex << "\\usepackage\{#{extracted}\}\n"
             end
@@ -112,24 +122,33 @@ module Jekyll
           tex_file = File.new(@p["tex_fn"], "w")
           tex_file.puts(latex_tex)
           tex_file.close
+
           # Compile the document to PNG
           ok = execute_cmd(@@globals["latex_cmd"])
-          execute_cmd(@@globals["dvips_cmd"]) if ok
-          execute_cmd(@@globals["convert_cmd"]) if ok
+          execute_cmd(@@globals["pdf_crop"]) if ok
+	  execute_cmd(@@globals["convert_cmd"]) if ok
           # Delete temporary files
-          Dir.glob(@@globals["temp_filename"] + ".*").each do |f|
-            File.delete(f)
+          Dir.glob(File.join(@@globals["src_dir"], pre_filename + ".*")).each do |f|
+            fileending = f.slice(-3,3)
+            if fileending != "png" and fileending != "pdf"
+              File.delete(f)
+            end
           end
         end
 
         if ok
           # Add the file to the list of static files for the final copy once generated
-          st_file = Jekyll::StaticFile.new(site, site.source, @@globals["output_directory"], filename)
-          @@generated_files << st_file
-          site.static_files << st_file
+          st_file_pdf = Jekyll::StaticFile.new(site, site.source, @@globals["output_directory"], filename_pdf)
+          @@generated_files << st_file_pdf
+          site.static_files << st_file_pdf
+          st_file_png = Jekyll::StaticFile.new(site, site.source, @@globals["output_directory"], filename_png)
+          @@generated_files << st_file_png
+          site.static_files << st_file_png
+
           # Build the <img> tag to be returned to the renderer
-          png_path = File.join(@@globals["output_directory"], filename)
-          return "<img src=\"" + png_path + "\" />"
+          pdf_path = File.join(@@globals["output_directory"], filename_pdf)
+          png_path = File.join(@@globals["output_directory"], filename_png)
+          return "<a href=\"" + pdf_path + "\"><img src=\"" + png_path + "\" /></a>"
         else
           # Generate a block of text in the post with the original source
           resp = "Failed to render the following block of LaTeX:<br/>\n"
@@ -155,7 +174,7 @@ module Jekyll
       Tags::LatexBlock::generated_files.each do |f|
         src_files << f.path
       end
-      pre_files = Dir.glob(File.join(source, Tags::LatexBlock::latex_output_directory, "latex-*.png"))
+      pre_files = Dir.glob(File.join(source, Tags::LatexBlock::latex_output_directory, "latex-*.png")) + Dir.glob(File.join(source, Tags::LatexBlock::latex_output_directory, "latex-*.pdf"))
       to_remove = pre_files - src_files
       to_remove.each do |f|
         File.unlink f if File.exists?(f)
